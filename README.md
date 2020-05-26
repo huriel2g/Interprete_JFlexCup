@@ -14,5 +14,7 @@ Lenguaje: Desarrollado en en lenguaje de programacion Java (Netbeans)
 
 
 Laboratorio de Compiladores 1 sección B.
+
 Primer Semestre 2020
+
 Aux. Huriel Gómez

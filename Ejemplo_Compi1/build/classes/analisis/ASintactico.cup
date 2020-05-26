@@ -1,0 +1,178 @@
+package analisis; 
+import java.io.*;
+import java_cup.runtime.*;
+import java.util.LinkedList;
+import javax.swing.JTextArea;
+import ast.AST;
+import ast.Instruccion;
+import ast.instrucciones.*;
+import ast.expresiones.*;
+import ast.expresiones.Operacion.TipoOperacion;
+import ast.entorno.Simbolo.Tipo;
+    
+parser code
+{:	
+
+
+	JTextArea consola;
+    void setConsola(JTextArea consola){
+        this.consola = consola;
+    }
+
+
+    public AST root = null;
+    public AST getRoot(){
+        return this.root;
+    }
+    public void setRoot(AST root){
+        this.root = root;
+    }
+
+    //Método al que se llama automáticamente ante algún error sintactico.
+    public void syntax_error(Symbol s){ 
+        consola.append("Error Sintáctico en la Línea " + (s.right + 1) +" Columna "+s.left+ ". No se esperaba este componente: " +s.value+".");
+        //System.err.println("Error Sintáctico en la Línea " + (s.right + 1) +" Columna "+s.left+ ". No se esperaba este componente: " +s.value+"."); 
+    } 
+
+    //Método al que se llama en el momento en que ya no es posible una recuperación de errores.
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{ 
+        System.err.println("Error síntactico irrecuperable en la Línea " + (s.right + 1)+ " Columna "+s.left+". Componente " + s.value + " no reconocido."); 
+        consola.append("Error síntactico irrecuperable en la Línea " + (s.right + 1)+ " Columna "+s.left+". Componente " + s.value + " no reconocido."); 
+    }
+
+:}
+
+
+/*action code
+{:	
+	public AST root = null;
+    public AST getRoot(){
+        return this.root;
+    }
+:}*/
+
+terminal String id, entero, decimal, cadena, mas, menos, por, div, int_, double_, igual, pcoma, print, pAbre,pCierra,
+				boolean_, String_, true_, false_, while_, llaveAbre, llaveCierra, mayor, menor, break_, if_,else_
+				;
+
+
+non terminal S, CODIGO, SENTENCIAS, SENT, EXPRESION, DECLARACION, TIPO, PRINT, BLOQUE_SENTENCIAS, WHILE, ASIGNACION, IF
+    ;
+
+precedence left  menor,mayor;
+precedence left  mas, menos;
+precedence left  por, div;
+
+start with S;
+
+S ::= CODIGO {:System.out.println("Fin del analisis...!!!");:}
+	;
+
+CODIGO ::= SENTENCIAS:ss {: parser.setRoot(new AST((LinkedList<Instruccion>)ss));	:}
+	;
+
+SENTENCIAS ::= SENTENCIAS:ss SENT:s {:
+		LinkedList<Instruccion> instrucciones = (LinkedList<Instruccion>) ss;
+        instrucciones.add((Instruccion)s);
+        RESULT = instrucciones;
+	:}
+	| SENT:s {:
+		LinkedList<Instruccion> instrucciones = new LinkedList<>();
+        instrucciones.add((Instruccion)s);
+        RESULT = instrucciones;
+	:}
+	;
+
+
+SENT ::= DECLARACION:d 	{: RESULT =d; :}
+	| ASIGNACION:a 		{: RESULT =a; :}
+	| PRINT:p 			{: RESULT = p; :}
+	| WHILE:w 			{: RESULT = w; :}
+	| IF:i 				{: RESULT = i; :}
+	| break_:b pcoma 	{: RESULT = new Break(bright,bleft); :}
+	;
+     
+DECLARACION ::= TIPO:t id:id igual EXPRESION:e pcoma {:
+	 	RESULT = new Declaracion((Tipo)t, id, (Instruccion)e, idright);
+	:}
+	| TIPO:t id:id pcoma {:
+		RESULT = new Declaracion((Tipo)t, id, idright);
+	:}
+	;
+
+ASIGNACION ::= id:id igual EXPRESION:exp pcoma{: 
+		RESULT = new Asignacion(id, (Instruccion)exp, idright);
+	:}
+	;
+
+PRINT ::= print:p pAbre EXPRESION:exp pCierra pcoma{:
+		RESULT = new Print((Instruccion)exp, pright);
+	:}
+	;
+
+BLOQUE_SENTENCIAS ::= llaveAbre SENTENCIAS:ss llaveCierra{: RESULT = ss; :}
+	;
+
+WHILE ::= while_:w pAbre EXPRESION:cond pCierra  BLOQUE_SENTENCIAS:ss {:
+		RESULT = new While((Instruccion)cond, (LinkedList<Instruccion>)ss, wright, wleft);
+	:}
+	;
+
+IF ::= if_:w pAbre EXPRESION:cond pCierra  BLOQUE_SENTENCIAS:ss {:
+		RESULT = new If((Instruccion)cond, (LinkedList<Instruccion>)ss, wright, wleft);
+	:}
+	| if_:w pAbre EXPRESION:cond pCierra  BLOQUE_SENTENCIAS:s1 else_ BLOQUE_SENTENCIAS:s2  {:
+		RESULT = new If((Instruccion)cond, (LinkedList<Instruccion>)s1, (LinkedList<Instruccion>)s2, wright, wleft);
+	:}
+	;
+
+TIPO ::= int_ {: RESULT = Tipo.INTEGER; :}
+	| double_ {: RESULT = Tipo.DOUBLE; :}
+	| boolean_ {: RESULT = Tipo.BOOLEAN; :}
+	| String_ {: RESULT = Tipo.STRING; :}
+	;
+
+EXPRESION ::= 
+	// OPERACIONES ARITMETICAS
+	EXPRESION:e1 mas:s EXPRESION:e2 {:
+		RESULT = new Operacion(TipoOperacion.SUMA, (Instruccion)e1, (Instruccion)e2, sright);
+	:}
+	| EXPRESION:e1 menos:s EXPRESION:e2 {:
+		RESULT = new Operacion(TipoOperacion.RESTA, (Instruccion)e1, (Instruccion)e2, sright);
+	:}
+	| EXPRESION:e1 por:s EXPRESION:e2 {:
+		RESULT = new Operacion(TipoOperacion.MULTIPLICACION, (Instruccion)e1, (Instruccion)e2, sright);
+	:}
+	| EXPRESION:e1 div:s EXPRESION:e2 {:
+		RESULT = new Operacion(TipoOperacion.DIVISION, (Instruccion)e1, (Instruccion)e2, sright);
+	:}
+	// OPERACIONES RELACIONALES
+	| EXPRESION:e1 menor:s EXPRESION:e2 {:
+		RESULT = new Operacion(TipoOperacion.MENOR, (Instruccion)e1, (Instruccion)e2, sright);
+	:}
+	| EXPRESION:e1 mayor:s EXPRESION:e2 {:
+		RESULT = new Operacion(TipoOperacion.MAYOR, (Instruccion)e1, (Instruccion)e2, sright);
+	:}
+	| entero:e {:
+		RESULT = new Primitivo(Integer.parseInt(e));
+	:}
+	| decimal:e {:
+		RESULT = new Primitivo(Double.parseDouble(e));
+	:}
+	| cadena:e {:
+		e = e.replace("\\n", "\n");
+        e = e.substring(1, e.length()-1); 
+        e = e.replace("\\t", "\t");
+        e = e.replace("\\r", "\r");
+		RESULT = new Primitivo(e);
+	:}
+	| true_:e {:
+		RESULT = new Primitivo(true);
+	:}
+	| false_:e {:
+		RESULT = new Primitivo(false);
+	:}
+	| id:e {:
+		RESULT = new Identificador(e, eright, eleft);
+	:}
+	;

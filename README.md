@@ -1,10 +1,12 @@
 # Interprete_JFlexCup
 Proyecto desarrollado para ejemplificar el manejo de un ast, tabla de simbolos y el analisis semantico en un interprete.
-Interprete sencillo desarrollado para un lenguaje Java con las instrucciones mas comunes.
-Herramientas: JFlex (analisis lexico) y Cup (analisis sintactico)
+
+Interprete sencillo desarrollado para un lenguaje "Java" con las instrucciones mas comunes.
+
+## Herramientas: JFlex (analisis lexico) y Cup (analisis sintactico)
 Lenguaje: Desarrollado en en lenguaje de programacion Java (Netbeans)
 
-# Instrucciones implementadas:
+## Instrucciones implementadas:
 - Declaracion de Variables
 - Asignacion de Variables
 - Sentencia If
